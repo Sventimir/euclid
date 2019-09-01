@@ -3,9 +3,12 @@ module Figure (
     Line(..),
     Circle(..),
     Segment(..),
+    distance,
     extend,
     translate,
-    intersectLines
+    intersectLines,
+    intersectCircles,
+    intersectLineCircle
 ) where
 
 import Data.Text (Text, unpack)
@@ -41,6 +44,9 @@ data Circle = Circle {
 
 extend :: Segment -> Line
 extend (Segment a b) = Line { anchor = a, dir = unit (loc a - loc b)}
+
+distance :: Point -> Point -> Double
+distance a b = magnitude (loc b - loc a)
 
 
 instance Show Point where

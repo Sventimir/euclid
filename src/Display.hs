@@ -1,9 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Display (
     Display(..),
+    DisplayState(..),
+    runDisplay,
+    getDisplay,
+    modDisplay,
     display
 ) where
 
+import Control.Monad.State
 import Foreign.C.Types (CInt(..))
 import Linear (V2(..))
 import qualified SDL.Vect as SDL
@@ -52,3 +57,30 @@ instance Displayable Circle where
             map (\a ->
                 drawPoint (renderer disp) . SDL.P . toPixels $ V2 (cos a * r + x) (sin a * r + y)
             ) angles
+
+newtype DisplayState a = DisplayState (StateT Display IO a)
+
+runDisplay :: DisplayState a -> Display -> IO Display
+runDisplay (DisplayState s) init = execStateT s init
+
+instance Functor DisplayState where
+    fmap f (DisplayState s) = DisplayState (fmap f s)
+
+instance Applicative DisplayState where
+    pure a = DisplayState $ pure a
+    (<*>) (DisplayState mf) (DisplayState ma) =
+            DisplayState (mf >>= \f -> ma >>= \a -> return (f a))
+
+instance Monad DisplayState where
+    return = pure
+    (>>=) (DisplayState s) f =
+            DisplayState $ s >>= ((\(DisplayState s') -> s') . f)
+
+instance MonadIO DisplayState where
+    liftIO m = DisplayState (lift m)
+
+getDisplay :: DisplayState Display
+getDisplay = DisplayState get
+
+modDisplay :: (Display -> Display) -> DisplayState ()
+modDisplay f = DisplayState $ modify f
