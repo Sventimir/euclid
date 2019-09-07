@@ -45,8 +45,8 @@ present = do
 
 showEquilateralTriangle :: DisplayState ()
 showEquilateralTriangle = do
-        let a = Fig.Point (V2 4 4) Nothing
-        let b = Fig.Point (V2 6 7) Nothing
+        let a = Fig.Point (V2 4 4) (Just $ Fig.Label "A" (V2 0 (-20)))
+        let b = Fig.Point (V2 6 7) (Just $ Fig.Label "B" (V2 0 0))
         modDisplay (\d -> d { draw = draw d >> (display d $ Fig.Segment a b) })
         _ <- Constr.equilateralTriangle True a b Constr.Left
         return ()
@@ -70,14 +70,14 @@ initView = do
     win <- SDL.createWindow "Geometric constructor" $ SDL.defaultWindow {
         SDL.windowMode = SDL.FullscreenDesktop
     }
-    renderer <- SDL.createRenderer win (-1) SDL.defaultRenderer
+    renderer <- SDL.createRenderer win 2 SDL.defaultRenderer
     let draw = do {
         SDL.rendererDrawColor renderer $= V4 255 255 255 255;
         SDL.clear renderer;
         SDL.rendererDrawColor renderer $= V4 0 0 0 255;
     }
 
-    font <- Font.load "/usr/share/fonts/ubuntu/UbuntuMono-B.ttf" 1
+    font <- Font.load "/usr/share/fonts/ubuntu/UbuntuMono-B.ttf" 20
     return $ Display {
         window = win,
         renderer = renderer,
@@ -88,7 +88,7 @@ initView = do
 
 main :: IO ()
 main = do
-    SDL.initialize [ SDL.InitEvents ]
+    SDL.initialize [ SDL.InitEvents, SDL.InitVideo ]
     Font.initialize
     display <- initView >>= runDisplay (loop [])
     Font.free $ font display

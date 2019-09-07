@@ -1,4 +1,5 @@
 module Figure (
+    Label(..),
     Point(..),
     Line(..),
     Circle(..),

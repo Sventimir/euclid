@@ -10,10 +10,11 @@ module Display (
 
 import Control.Monad.State
 import Foreign.C.Types (CInt(..))
-import Linear (V2(..))
+import Linear (V2(..), V4(..))
 import qualified SDL.Vect as SDL
 import qualified SDL.Font as Font
-import SDL.Video (Window, Renderer, drawPoint, drawLine)
+import SDL.Video (Window, Renderer, getWindowSurface, surfaceBlit, freeSurface,
+        drawPoint, drawLine)
 
 import Figure
 
@@ -38,6 +39,14 @@ class Displayable d where
 instance Displayable Point where
     display disp p = do
         drawPoint (renderer disp) $ toSDLPoint p
+        case ptLabel p of
+            Nothing -> return ()
+            Just l -> do
+                let absPosition = (SDL.P . fmap CInt $ position l) + (toSDLPoint p)
+                surf <- getWindowSurface (window disp)
+                txt <- Font.blended (font disp) (V4 0 0 0 255) (text l)
+                _ <- surfaceBlit txt Nothing surf $ Just absPosition
+                freeSurface txt
 
 instance Displayable Segment where
     display disp (Segment begin end) = do
