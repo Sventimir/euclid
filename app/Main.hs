@@ -39,18 +39,6 @@ instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
             draw = draw d >> display d c
         })
 
-showCopySegment :: DisplayState ()
-showCopySegment = do
-        let a = Fig.Point (V2 2 5) (Just $ Fig.Label "A" (V2 (-5) 0))
-        let b = Fig.Point (V2 4 3) (Just $ Fig.Label "B" (V2 5 0))
-        let c = Fig.Point (V2 5 3) (Just $ Fig.Label "C" (V2 5 0))
-        Constr.displayLine b c
-        d <- Constr.copySegment True a b c Constr.Left
-        modDisplay (\disp -> disp { draw = draw disp >> (display disp $ d {
-            Fig.ptLabel = Just $ Fig.Label "D" (V2 0 (-20))
-        })})
-        return ()
-
 pointOfStr :: String -> Maybe String -> Fig.Point
 pointOfStr s label =
         let (x, y) = read s :: (Double, Double) in
@@ -71,8 +59,8 @@ selectConstruction ["equilateralTriangle", astr, bstr] = do
 
 selectConstruction ["copySegment", astr, bstr, cstr] = do
         let a = pointOfStr astr $ Just "A"
-        let b = pointOfStr astr $ Just "B"
-        let c = pointOfStr astr $ Just "C"
+        let b = pointOfStr bstr $ Just "B"
+        let c = pointOfStr cstr $ Just "C"
         return $ do
             Constr.displayLine b c
             d <- Constr.copySegment True a b c Constr.Left

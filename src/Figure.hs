@@ -118,5 +118,4 @@ intersectLineCircle (Line al (V2 xv yv)) (Circle cc r) =
             c = t ** 2 - r ** 2
         in do
             x <- quadratic (a, b ,c)
-            v <- return $ V2 x (x * yv / xv)
-            return $ translate v cc
+            return $ translate (V2 x (x * yv / xv)) cc
