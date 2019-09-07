@@ -4,6 +4,7 @@ module Main where
 import SDL (($=))
 import qualified SDL
 import qualified SDL.Font as Font
+import Data.Text (pack)
 import Linear (V2(..), V4(..))
 import Control.Monad.State
 import Foreign.C.Types
@@ -38,22 +39,6 @@ instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
             draw = draw d >> display d c
         })
 
-showEquilateralTriangle :: DisplayState ()
-showEquilateralTriangle = do
-        let a = Fig.Point (V2 4 4) (Just $ Fig.Label "A" (V2 0 (-20)))
-        let b = Fig.Point (V2 6 7) (Just $ Fig.Label "B" (V2 0 0))
-        modDisplay (\d -> d { draw = draw d >> (display d $ Fig.Segment a b) })
-        c <- Constr.equilateralTriangle True a b Constr.Left
-        modDisplay (\d -> d {
-            draw = draw d >> (display d $ c {
-                Fig.ptLabel = Just $ Fig.Label {
-                    Fig.text = "C",
-                    Fig.position = V2 5 0
-                }
-            })
-        })
-        return ()
-
 showCopySegment :: DisplayState ()
 showCopySegment = do
         let a = Fig.Point (V2 2 5) (Just $ Fig.Label "A" (V2 (-5) 0))
@@ -66,18 +51,34 @@ showCopySegment = do
         })})
         return ()
 
+pointOfStr :: String -> Maybe String -> Fig.Point
+pointOfStr s label =
+        let (x, y) = read s :: (Double, Double) in
+        Fig.Point (V2 x y) $ fmap (flip Fig.Label (V2 0 0) . pack) label
+
 selectConstruction :: [String] -> IO (DisplayState ())
 selectConstruction ["equilateralTriangle", astr, bstr] = do
-        let (xa, ya) = (read astr :: (Double, Double))
-        let (xb, yb) = (read bstr :: (Double, Double))
-        let a = Fig.Point (V2 xa ya) (Just $ Fig.Label "A" (V2 0 0))
-        let b = Fig.Point (V2 xb yb) (Just $ Fig.Label "B" (V2 0 0))
+        let a = pointOfStr astr $ Just "A"
+        let b = pointOfStr bstr $ Just "B"
         return $ do
             Constr.displayLine a b
             c <- Constr.equilateralTriangle True a b Constr.Left
             modDisplay (\disp -> disp {
                 draw = draw disp >> (display disp $ c {
                     Fig.ptLabel = Just (Fig.Label "C" (V2 0 0))
+                })
+            })
+
+selectConstruction ["copySegment", astr, bstr, cstr] = do
+        let a = pointOfStr astr $ Just "A"
+        let b = pointOfStr astr $ Just "B"
+        let c = pointOfStr astr $ Just "C"
+        return $ do
+            Constr.displayLine b c
+            d <- Constr.copySegment True a b c Constr.Left
+            modDisplay (\disp -> disp {
+                draw = draw disp >> (display disp $ d {
+                    Fig.ptLabel = Just (Fig.Label "D" (V2 0 0))
                 })
             })
 
