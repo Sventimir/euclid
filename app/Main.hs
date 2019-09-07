@@ -5,9 +5,10 @@ import SDL (($=))
 import qualified SDL
 import qualified SDL.Font as Font
 import Linear (V2(..), V4(..))
-
 import Control.Monad.State
 import Foreign.C.Types
+import System.Environment (getArgs)
+import System.IO (stderr, hPutStrLn)
 import Display
 import Vector (angle)
 import qualified Figure as Fig
@@ -37,13 +38,6 @@ instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
             draw = draw d >> display d c
         })
 
-present :: DisplayState ()
-present = do
-        display <- getDisplay
-        liftIO $ SDL.clear (renderer display)
-        liftIO $ draw display
-        liftIO $ SDL.present (renderer display)
-
 showEquilateralTriangle :: DisplayState ()
 showEquilateralTriangle = do
         let a = Fig.Point (V2 4 4) (Just $ Fig.Label "A" (V2 0 (-20)))
@@ -72,19 +66,45 @@ showCopySegment = do
         })})
         return ()
 
-loop :: [SDL.Event] -> DisplayState ()
-loop [] = SDL.pollEvents >>= loop
-loop (e : es) = case SDL.eventPayload e of
+selectConstruction :: [String] -> IO (DisplayState ())
+selectConstruction ["equilateralTriangle", astr, bstr] = do
+        let (xa, ya) = (read astr :: (Double, Double))
+        let (xb, yb) = (read bstr :: (Double, Double))
+        let a = Fig.Point (V2 xa ya) (Just $ Fig.Label "A" (V2 0 0))
+        let b = Fig.Point (V2 xb yb) (Just $ Fig.Label "B" (V2 0 0))
+        return $ do
+            Constr.displayLine a b
+            c <- Constr.equilateralTriangle True a b Constr.Left
+            modDisplay (\disp -> disp {
+                draw = draw disp >> (display disp $ c {
+                    Fig.ptLabel = Just (Fig.Label "C" (V2 0 0))
+                })
+            })
+
+selectConstruction _ = do
+        hPutStrLn stderr "Unrecognized construction! Initializing empty view."
+        return $ return ()
+
+present :: DisplayState ()
+present = do
+        display <- getDisplay
+        liftIO $ SDL.clear (renderer display)
+        liftIO $ draw display
+        liftIO $ SDL.present (renderer display)
+
+loop :: DisplayState () -> [SDL.Event] -> DisplayState ()
+loop constr [] = SDL.pollEvents >>= loop constr
+loop constr (e : es) = case SDL.eventPayload e of
         SDL.KeyboardEvent ke -> handleKeyPress ke
         SDL.QuitEvent -> return ()
-        _ -> present >> loop es
+        _ -> present >> loop constr es
     where
     handleKeyPress :: SDL.KeyboardEventData -> DisplayState ()
     handleKeyPress (SDL.KeyboardEventData _win _mot _rep keysym) =
             case SDL.unwrapKeycode $ SDL.keysymKeycode keysym of
-                13 -> showCopySegment >> present >> loop es
+                13 -> constr >> present >> loop constr es
                 27 -> return () -- ESC
-                _ -> loop es
+                _ -> loop constr es
 
 initView :: IO Display
 initView = do
@@ -112,7 +132,8 @@ main :: IO ()
 main = do
     SDL.initialize [ SDL.InitEvents, SDL.InitVideo ]
     Font.initialize
-    display <- initView >>= runDisplay (loop [])
+    constr <- getArgs >>= selectConstruction
+    display <- initView >>= runDisplay (loop constr [])
     Font.free $ font display
     Font.quit
     SDL.quit
