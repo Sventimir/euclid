@@ -48,7 +48,15 @@ showEquilateralTriangle = do
         let a = Fig.Point (V2 4 4) (Just $ Fig.Label "A" (V2 0 (-20)))
         let b = Fig.Point (V2 6 7) (Just $ Fig.Label "B" (V2 0 0))
         modDisplay (\d -> d { draw = draw d >> (display d $ Fig.Segment a b) })
-        _ <- Constr.equilateralTriangle True a b Constr.Left
+        c <- Constr.equilateralTriangle True a b Constr.Left
+        modDisplay (\d -> d {
+            draw = draw d >> (display d $ c {
+                Fig.ptLabel = Just $ Fig.Label {
+                    Fig.text = "C",
+                    Fig.position = V2 5 0
+                }
+            })
+        })
         return ()
 
 loop :: [SDL.Event] -> DisplayState ()
