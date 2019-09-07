@@ -83,7 +83,7 @@ intersectLines l1 l2 =
 
 intersectCircles :: Circle -> Circle -> [Point]
 intersectCircles (Circle c1 r1) (Circle c2 r2) =
-        let d = loc c2 - loc c1
+        let d@(V2 x y) = loc c2 - loc c1
             dist = magnitude d
             cosAlpha = (dist ** 2 + r1 ** 2 - r2 ** 2) / (2 * r1 * dist)
             vs = case compare cosAlpha 1 of
@@ -93,8 +93,11 @@ intersectCircles (Circle c1 r1) (Circle c2 r2) =
                         angle d + acos cosAlpha,
                         angle d - acos cosAlpha
                     ]]
+            trans = if (x < 0) || (x == 0 && y < 0)
+                then flip translate c1 . scale (-1)
+                else flip translate c1
         in
-        map (flip translate c1) vs
+        map trans vs
 
 intersectLineCircle :: Line ->  Circle -> [Point]
 intersectLineCircle (Line a (V2 0 y)) (Circle c r) =

@@ -4,7 +4,8 @@ module Construction (
     Choice(..),
     Orientation(..),
 
-    equilateralTriangle
+    equilateralTriangle,
+    copySegment
 ) where
 
 import Control.Monad
@@ -18,6 +19,7 @@ class Monad constr => Construction constr p l c | constr -> p l c where
     line :: p -> p -> constr l
     circle :: p -> p -> constr c
     intersectCircles :: c -> c -> constr [p]
+    intersectLineCircle :: l -> c -> constr [p]
 
     displayCircle :: c -> constr ()
     displayLine :: p -> p -> constr ()
@@ -42,3 +44,19 @@ equilateralTriangle detailed a b orientation = do
                     return c
 
             _ -> fail "The IMPOSSIBLE happened!"
+
+copySegment :: (Choice p Orientation, Construction constr p l c) =>
+        Bool -> p -> p -> p -> Orientation -> constr p
+copySegment detailed a b c orientation = do
+        d <- equilateralTriangle False a b orientation
+        da <- line d a
+        db <- line d b
+        c_bc <- circle b c
+        es <- intersectLineCircle db c_bc
+        when detailed $ do
+            displayLine a b
+            displayLine a d
+            displayLine b d
+            sequence_ $ map (displayLine b) es
+            displayCircle c_bc
+        return d

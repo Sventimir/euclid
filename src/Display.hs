@@ -50,6 +50,8 @@ instance Displayable Point where
 
 instance Displayable Segment where
     display disp (Segment begin end) = do
+        display disp begin
+        display disp end
         drawLine (renderer disp) (toSDLPoint begin) (toSDLPoint end)
 
 instance Displayable Circle where

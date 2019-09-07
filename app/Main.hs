@@ -28,6 +28,7 @@ instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
     line a b = return $ Fig.Line a (Fig.loc a - Fig.loc b)
     circle a b = return $ Fig.Circle a (Fig.distance a b)
     intersectCircles c1 c2 = return $ Fig.intersectCircles c1 c2
+    intersectLineCircle c l = return $ Fig.intersectLineCircle c l
 
     displayLine a b = modDisplay (\d -> d {
             draw = draw d >> (display d $ Fig.Segment a b)
@@ -59,6 +60,18 @@ showEquilateralTriangle = do
         })
         return ()
 
+showCopySegment :: DisplayState ()
+showCopySegment = do
+        let a = Fig.Point (V2 2 5) (Just $ Fig.Label "A" (V2 (-5) 0))
+        let b = Fig.Point (V2 4 3) (Just $ Fig.Label "B" (V2 5 0))
+        let c = Fig.Point (V2 5 3) (Just $ Fig.Label "C" (V2 5 0))
+        Constr.displayLine b c
+        d <- Constr.copySegment True a b c Constr.Left
+        modDisplay (\disp -> disp { draw = draw disp >> (display disp $ d {
+            Fig.ptLabel = Just $ Fig.Label "D" (V2 0 (-20))
+        })})
+        return ()
+
 loop :: [SDL.Event] -> DisplayState ()
 loop [] = SDL.pollEvents >>= loop
 loop (e : es) = case SDL.eventPayload e of
@@ -69,14 +82,15 @@ loop (e : es) = case SDL.eventPayload e of
     handleKeyPress :: SDL.KeyboardEventData -> DisplayState ()
     handleKeyPress (SDL.KeyboardEventData _win _mot _rep keysym) =
             case SDL.unwrapKeycode $ SDL.keysymKeycode keysym of
-                13 -> showEquilateralTriangle >> present >> loop es
+                13 -> showCopySegment >> present >> loop es
                 27 -> return () -- ESC
                 _ -> loop es
 
 initView :: IO Display
 initView = do
     win <- SDL.createWindow "Geometric constructor" $ SDL.defaultWindow {
-        SDL.windowMode = SDL.FullscreenDesktop
+        SDL.windowMode = SDL.FullscreenDesktop,
+        SDL.windowResizable = True
     }
     renderer <- SDL.createRenderer win 2 SDL.defaultRenderer
     let draw = do {
