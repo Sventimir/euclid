@@ -9,7 +9,6 @@ module Construction (
 ) where
 
 import Control.Monad
-import Linear (V2(..))
 
 
 data Orientation = Left | Right

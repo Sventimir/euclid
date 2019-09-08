@@ -30,7 +30,7 @@ instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
     line a b = return $ Fig.Line a (Fig.loc a - Fig.loc b)
     circle a b = return $ Fig.Circle a (Fig.distance a b)
     intersectCircles c1 c2 = return $ Fig.intersectCircles c1 c2
-    intersectLineCircle c l = return $ Fig.intersectLineCircle c l
+    intersectLineCircle l c = return $ Fig.intersectLineCircle l c
 
     displayLine a b = modDisplay (\d -> d {
             draw = draw d >> (display d $ Fig.Segment a b)

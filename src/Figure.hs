@@ -100,22 +100,11 @@ intersectCircles (Circle c1 r1) (Circle c2 r2) =
         map trans vs
 
 intersectLineCircle :: Line ->  Circle -> [Point]
-intersectLineCircle (Line a (V2 0 y)) (Circle c r) =
-        let V2 xz yz = loc c - loc a
-            results = quadratic (1, 0, xz ** 2 - r ** 2)
-        in
-        map (flip translate c . V2 (-xz)) results
-intersectLineCircle (Line a (V2 x 0)) (Circle c r) =
-        let V2 xz yz = loc c - loc a
-            results = quadratic (1, 0, yz ** 2 - r ** 2)
-        in
-        map (flip translate c . flip V2 (-yz)) results
-intersectLineCircle (Line al (V2 xv yv)) (Circle cc r) =
+intersectLineCircle (Line al v@(V2 xv yv)) (Circle cc r) =
         let V2 xz yz = loc cc - loc al
-            t = (yv * xz - xv * yz) / xv
-            a = (yv ** 2) / (xv ** 2) + 1
-            b = 2 * (yv ** 2) / xv
-            c = t ** 2 - r ** 2
+            a = (xv ** 2) + (yv ** 2)
+            b = 2 * (xz * xv + yz * yv)
+            c = (xz ** 2) + (yz ** 2) - (r ** 2)
         in do
-            x <- quadratic (a, b ,c)
-            return $ translate (V2 x (x * yv / xv)) cc
+            s <- quadratic (a, b ,c)
+            return $ translate (scale (-s) v) al
