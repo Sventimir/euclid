@@ -9,6 +9,7 @@ module Construction (
 ) where
 
 import Control.Monad
+import Data.Maybe
 
 
 data Orientation = Left | Right
@@ -19,6 +20,9 @@ class Monad constr => Construction constr p l c | constr -> p l c where
     circle :: p -> p -> constr c
     intersectCircles :: c -> c -> constr [p]
     intersectLineCircle :: l -> c -> constr [p]
+
+    closer :: p -> p -> p -> constr p
+    farther :: p -> p -> p -> constr p
 
     displayCircle :: c -> constr ()
     displayLine :: p -> p -> constr ()
@@ -52,10 +56,22 @@ copySegment detailed a b c orientation = do
         db <- line d b
         c_bc <- circle b c
         es <- intersectLineCircle db c_bc
+        e <- case es of
+            [x] -> return x
+            [x, y] -> farther d x y
+            _ -> fail "The IMPOSSIBLE happened!"
+        c_de <- circle d e
+        fs <- intersectLineCircle da c_de
+        f <- case fs of
+            [x] -> return x
+            [x, y] -> farther d x y
+            _ -> fail "The IMPOSSIBLE happened"
         when detailed $ do
             displayLine a b
             displayLine a d
             displayLine b d
-            sequence_ $ map (displayLine b) es
+            displayLine b e
             displayCircle c_bc
-        return d
+            displayCircle c_de
+        displayLine a f
+        return f

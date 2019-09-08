@@ -32,6 +32,9 @@ instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
     intersectCircles c1 c2 = return $ Fig.intersectCircles c1 c2
     intersectLineCircle l c = return $ Fig.intersectLineCircle l c
 
+    closer p a b = return $ if Fig.distance p a <= Fig.distance p b then a else b
+    farther p a b = return $ if Fig.distance p a >= Fig.distance p b then a else b
+
     displayLine a b = modDisplay (\d -> d {
             draw = draw d >> (display d $ Fig.Segment a b)
         })
