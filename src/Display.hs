@@ -11,6 +11,7 @@ module Display (
 import Control.Monad.State
 import Foreign.C.Types (CInt(..))
 import Linear (V2(..), V4(..))
+import Data.Int (Int32)
 import qualified SDL.Vect as SDL
 import qualified SDL.Font as Font
 import SDL.Video (Window, Renderer, getWindowSurface, surfaceBlit, freeSurface,
@@ -19,18 +20,19 @@ import SDL.Video (Window, Renderer, getWindowSurface, surfaceBlit, freeSurface,
 import Figure
 
 
-toPixels :: V2 Double -> V2 CInt
-toPixels (V2 x y) = V2 (CInt $ round (x * 100)) (CInt $ round (y * 100))
+toPixels :: Int32 -> V2 Double -> V2 CInt
+toPixels winHeight (V2 x y) = V2 (CInt $ round (x * 100)) (CInt $ winHeight - round (y * 100))
 
 data Display = Display {
     window :: Window,
+    windowSize :: V2 Int32,
     renderer :: Renderer,
     font :: Font.Font,
     draw :: IO ()
 }
 
-toSDLPoint :: Point -> SDL.Point V2 CInt
-toSDLPoint = SDL.P . toPixels . loc
+toSDLPoint :: Int32 -> Point -> SDL.Point V2 CInt
+toSDLPoint winHeight = SDL.P . toPixels winHeight . loc
 
 
 class Displayable d where
@@ -38,11 +40,13 @@ class Displayable d where
 
 instance Displayable Point where
     display disp p = do
-        drawPoint (renderer disp) $ toSDLPoint p
+        let V2 _ winHeight = windowSize disp
+        drawPoint (renderer disp) $ toSDLPoint winHeight p
         case ptLabel p of
             Nothing -> return ()
             Just l -> do
-                let absPosition = (SDL.P . fmap CInt $ position l) + (toSDLPoint p)
+                let V2 xl yl = position l
+                let absPosition = (SDL.P . fmap CInt $ V2 xl (-yl)) + (toSDLPoint winHeight p)
                 surf <- getWindowSurface (window disp)
                 txt <- Font.blended (font disp) (V4 0 0 0 255) (text l)
                 _ <- surfaceBlit txt Nothing surf $ Just absPosition
@@ -50,9 +54,10 @@ instance Displayable Point where
 
 instance Displayable Segment where
     display disp (Segment begin end) = do
+        let V2 _ winHeight = windowSize disp
         display disp begin
         display disp end
-        drawLine (renderer disp) (toSDLPoint begin) (toSDLPoint end)
+        drawLine (renderer disp) (toSDLPoint winHeight begin) (toSDLPoint winHeight end)
 
 instance Displayable Circle where
     display disp c = do
@@ -62,11 +67,12 @@ instance Displayable Circle where
         where
         y_of_x x = sqrt ((radius c) ** 2 - x ** 2)
         drawCircumference x y r =
+            let V2 _ winHeight = windowSize disp in
             let circumference = round (2 * pi * r * 100)
                 angles = [2 * pi * fromIntegral x / fromIntegral circumference | x <- [0..circumference]]
             in
             map (\a ->
-                drawPoint (renderer disp) . SDL.P . toPixels $ V2 (cos a * r + x) (sin a * r + y)
+                drawPoint (renderer disp) . SDL.P . toPixels winHeight $ V2 (cos a * r + x) (sin a * r + y)
             ) angles
 
 newtype DisplayState a = DisplayState (StateT Display IO a)

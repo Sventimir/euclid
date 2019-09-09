@@ -64,7 +64,7 @@ copySegment detailed a b c orientation = do
         fs <- intersectLineCircle da c_de
         f <- case fs of
             [x] -> return x
-            [x, y] -> farther d x y
+            [x, y] -> closer a x y
             _ -> fail "The IMPOSSIBLE happened"
         when detailed $ do
             displayLine a b

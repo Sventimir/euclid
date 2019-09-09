@@ -84,19 +84,27 @@ present = do
         liftIO $ draw display
         liftIO $ SDL.present (renderer display)
 
-loop :: DisplayState () -> [SDL.Event] -> DisplayState ()
-loop constr [] = SDL.pollEvents >>= loop constr
-loop constr (e : es) = case SDL.eventPayload e of
+loop :: DisplayState () -> DisplayState ()
+loop constr = do
+    event <- liftIO SDL.waitEvent
+    case SDL.eventPayload event of
         SDL.KeyboardEvent ke -> handleKeyPress ke
+        SDL.WindowResizedEvent e -> handleWinResize e
         SDL.QuitEvent -> return ()
-        _ -> present >> loop constr es
+        _ -> present >> loop constr
     where
+    handleWinResize :: SDL.WindowResizedEventData -> DisplayState ()
+    handleWinResize (SDL.WindowResizedEventData win size) = do
+            modDisplay $ \disp -> if win == window disp
+                 then disp { windowSize = size }
+                 else disp
+            loop constr
     handleKeyPress :: SDL.KeyboardEventData -> DisplayState ()
     handleKeyPress (SDL.KeyboardEventData _win _mot _rep keysym) =
             case SDL.unwrapKeycode $ SDL.keysymKeycode keysym of
-                13 -> constr >> present >> loop constr es
+                13 -> constr >> present >> loop constr
                 27 -> return () -- ESC
-                _ -> loop constr es
+                _ -> loop constr
 
 initView :: IO Display
 initView = do
@@ -112,8 +120,10 @@ initView = do
     }
 
     font <- Font.load "/usr/share/fonts/ubuntu/UbuntuMono-B.ttf" 20
+    V2 (CInt winx) (CInt winy) <- SDL.get $ SDL.windowSize win
     return $ Display {
         window = win,
+        windowSize = V2 winx winy,
         renderer = renderer,
         font = font,
         draw = draw
@@ -125,7 +135,7 @@ main = do
     SDL.initialize [ SDL.InitEvents, SDL.InitVideo ]
     Font.initialize
     constr <- getArgs >>= selectConstruction
-    display <- initView >>= runDisplay (loop constr [])
+    display <- initView >>= runDisplay (loop constr)
     Font.free $ font display
     Font.quit
     SDL.quit
