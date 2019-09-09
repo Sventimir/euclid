@@ -93,7 +93,7 @@ intersectCircles (Circle c1 r1) (Circle c2 r2) =
                         angle d + acos cosAlpha,
                         angle d - acos cosAlpha
                     ]]
-            trans = if (x < 0) || (x == 0 && y < 0)
+            trans = if x < 0
                 then flip translate c1 . scale (-1)
                 else flip translate c1
         in
