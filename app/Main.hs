@@ -98,6 +98,43 @@ selectConstruction ["doubleAngle", length, turn] = do
     where
     readTurn = 5 + 2 * pi * read turn * read length
 
+selectConstruction ["polars", x, y, bx, by, cx, cy] = do
+    let o = Fig.Point (V2 5 5) Nothing
+    let circ = Fig.Circle o 2
+    let a = Fig.Point (V2 (read x) (read y)) (Just $ Fig.Label (pack "a") $ V2 0 0)
+    let abd = Fig.Line a (V2 (read bx) (read by))
+    let ace = Fig.Line a (V2 (read cx) (read cy))
+    return $ do
+        [b, d] <- Constr.intersectLineCircle abd circ
+        [c, e] <- Constr.intersectLineCircle ace circ
+        Just f <- Constr.intersectLines (Fig.extend $ Fig.Segment b e) (Fig.extend $ Fig.Segment c d)
+        Just g <- Constr.intersectLines (Fig.extend $ Fig.Segment b c) (Fig.extend $ Fig.Segment d e)
+        [x, y] <- Constr.intersectLineCircle (Fig.extend $ Fig.Segment f g) circ
+        Constr.displayCircle circ
+        Constr.displayLine a b
+        Constr.displayLine b d
+        Constr.displayLine a c
+        Constr.displayLine c e
+        Constr.displayLine b c
+        Constr.displayLine b e
+        Constr.displayLine c d
+        Constr.displayLine d e
+        Constr.displayLine f g
+        Constr.displayLine b g
+        Constr.displayLine d g
+        Constr.displayLine x y
+        modDisplay (\dis -> dis {
+            draw = do
+                draw dis
+                display dis b
+                display dis c
+                display dis d
+                display dis e
+                display dis f
+                display dis g
+        })
+
+
 selectConstruction _ = do
         hPutStrLn stderr "Unrecognized construction! Initializing empty view."
         return $ return ()

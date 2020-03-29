@@ -8,6 +8,7 @@ module Display (
     display
 ) where
 
+import Control.Monad.Fail
 import Control.Monad.State
 import Foreign.C.Types (CInt(..))
 import Linear (V2(..), V4(..))
@@ -95,6 +96,9 @@ instance Monad DisplayState where
 
 instance MonadIO DisplayState where
     liftIO m = DisplayState (lift m)
+
+instance MonadFail DisplayState where
+    fail = error
 
 getDisplay :: DisplayState Display
 getDisplay = DisplayState get
