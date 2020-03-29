@@ -5,7 +5,8 @@ module Construction (
     Orientation(..),
 
     equilateralTriangle,
-    copySegment
+    copySegment,
+    perpendicularThrough
 ) where
 
 import Control.Monad
@@ -18,6 +19,7 @@ data Orientation = Left | Right
 class Monad constr => Construction constr p l c | constr -> p l c where
     line :: p -> p -> constr l
     circle :: p -> p -> constr c
+    intersectLines :: l -> l -> constr (Maybe p)
     intersectCircles :: c -> c -> constr [p]
     intersectLineCircle :: l -> c -> constr [p]
 
@@ -75,3 +77,17 @@ copySegment detailed a b c orientation = do
             displayCircle c_de
         displayLine a f
         return f
+
+perpendicularThrough :: (Choice p Orientation, Construction constr p l c) =>
+        Bool -> p -> p -> p -> constr (Maybe p)
+perpendicularThrough detailed a b t = do
+        l <- line a b
+        cir <- circle t a
+        inters <- intersectLineCircle l cir
+        case inters of
+            [c, d] -> do
+                e <- equilateralTriangle detailed c d Construction.Left
+                when detailed $ do
+                    displayCircle cir
+                    displayLine t e
+                return $ Just e

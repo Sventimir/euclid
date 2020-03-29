@@ -29,6 +29,7 @@ instance Constr.Choice Fig.Point Constr.Orientation where
 instance Constr.Construction DisplayState Fig.Point Fig.Line Fig.Circle where
     line a b = return $ Fig.Line a (Fig.loc a - Fig.loc b)
     circle a b = return $ Fig.Circle a (Fig.distance a b)
+    intersectLines l1 l2 = return $ Fig.intersectLines l1 l2
     intersectCircles c1 c2 = return $ Fig.intersectCircles c1 c2
     intersectLineCircle l c = return $ Fig.intersectLineCircle l c
 
@@ -72,6 +73,30 @@ selectConstruction ["copySegment", astr, bstr, cstr] = do
                     Fig.ptLabel = Just (Fig.Label "D" (V2 0 0))
                 })
             })
+
+selectConstruction ["doubleAngle", length, turn] = do
+        let a = Fig.Point (V2 (5 + read length) 5) $ Just (Fig.Label (pack "A") $ V2 0 0)
+        let b = Fig.Point (V2 (cos readTurn) (sin readTurn)) $ Just (Fig.Label (pack "B") $ V2 0 0)
+        let o = Fig.Point (V2 5 5) Nothing
+        return $ do
+            Constr.displayLine o a
+            Constr.displayLine o b
+            unitCirc <- Constr.circle o a
+            Constr.displayCircle unitCirc
+            maybe_c <- Constr.perpendicularThrough False o b a
+            case maybe_c of
+                Just c -> do
+                    l <- Constr.line a c
+                    inters <- Constr.intersectLineCircle l unitCirc
+                    case inters of
+                        [x, y] ->
+                            modDisplay (\d -> d {
+                                draw = draw d >> (display d $ Fig.Segment x y)
+                            })
+
+
+    where
+    readTurn = 5 + 2 * pi * read turn * read length
 
 selectConstruction _ = do
         hPutStrLn stderr "Unrecognized construction! Initializing empty view."
